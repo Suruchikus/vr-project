@@ -61,7 +61,9 @@ class HandTracking:
         return self.hand_closed
 
 class OpenGLScene:
+    
     def __init__(self):
+        self.hand_tracker = HandTracking()
         pygame.init()
         display = (800, 600)
         pygame.display.set_mode(display, DOUBLEBUF | OPENGL)
@@ -72,7 +74,23 @@ class OpenGLScene:
         self.scene_box = self.calculate_scene_box()
         self.scene_trans = [-(self.scene_box[1][i] + self.scene_box[0][i]) / 2 for i in range(3)]
         self.scene_scale = self.calculate_scene_scale()
+        self.angle = 0
+        
+    def draw_rectangle(self):
+        vertices = [
+            [-0.5, -0.5, 0.0],  
+            [0.5, -0.5, 0.0],   
+            [0.5, 0.5, 0.0],    
+            [-0.5, 0.5, 0.0]    
+        ]
 
+        glBegin(GL_QUADS)
+        corner_translation = [-3.0, -2.0, 0.0]
+        translated_vertices = [[v[0] + corner_translation[0], v[1] + corner_translation[1], v[2] + corner_translation[2]] for v in vertices]
+        for vertex in translated_vertices:
+            glVertex3f(*vertex)
+        glEnd()
+        
     def calculate_scene_box(self):
         scene_box = (self.scene.vertices[0], self.scene.vertices[0])
         for vertex in self.scene.vertices:
@@ -82,7 +100,7 @@ class OpenGLScene:
         return scene_box
 
     def calculate_scene_scale(self):
-        scaled_size = 5
+        scaled_size = 3
         scene_size = [self.scene_box[1][i] - self.scene_box[0][i] for i in range(3)]
         max_scene_size = max(scene_size)
         return [scaled_size / max_scene_size for i in range(3)]
@@ -102,62 +120,45 @@ class OpenGLScene:
         glPopMatrix()
 
     def main_loop(self):
+        hand_tracker = HandTracking()
         hand_position_prev_x = 0
         hand_position_prev_y = 0
         
-        # phand_position_prev = (0, 0)
         while True:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     quit()
 
-                if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_LEFT:
-                        glTranslatef(-0.5, 0, 0)
-                    if event.key == pygame.K_RIGHT:
-                        glTranslatef(0.5, 0, 0)
-                    if event.key == pygame.K_UP:
-                        glTranslatef(0, 1, 0)
-                    if event.key == pygame.K_DOWN:
-                        glTranslatef(0, -1, 0)
 
-            glRotatef(1, 5, 1, 1)
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-
+            glPushMatrix()
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
+            glPopMatrix()
+            glRotatef(1, 5, 1, 1)
             self.draw_model()
-            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
 
             pygame.display.flip()
             pygame.time.wait(15)
-            hand_tracker = HandTracking()
             cap = cv2.VideoCapture(0)  
             ret, frame = cap.read()
             processed_frame = hand_tracker.scan_hands(frame)
             hand_closed = hand_tracker.is_hand_closed()
             if hand_closed:
-                hand_position_curr_x = hand_tracker.hand_x  # Current hand position
+                hand_position_curr_x = hand_tracker.hand_x  
                 hand_position_curr_y = hand_tracker.hand_y
-                # Determine the direction of movement
                 if hand_position_curr_x > hand_position_prev_x:
-                    # Hand moved right
-                    glTranslatef(0.1, 0, 0)  # Translate cube right
+                    glTranslatef(0.1, 0, 0)
                 elif hand_position_curr_x < hand_position_prev_x:
-                   # Hand moved left
-                   glTranslatef(-0.1, 0, 0)  # Translate cube left
+                   glTranslatef(-0.1, 0, 0)  
                 if hand_position_curr_y > hand_position_prev_y:
-                    # Hand moved right
-                        glTranslatef(0, 0.1, 0)  # Translate cube up
+                        glTranslatef(0, 0.1, 0)  
                 elif hand_position_curr_y < hand_position_prev_y:
-                   # Hand moved left
-                   glTranslatef(0, -0.1, 0) # Translate cube left
-                # Update previous hand position
+                   glTranslatef(0, -0.1, 0)
                 hand_position_prev_x = hand_position_curr_x
                 hand_position_prev_y = hand_position_curr_y
                 
 SCREEN_WIDTH, SCREEN_HEIGHT = 1200, 1200
-
 def main():
     scene = OpenGLScene()
     scene.main_loop()
