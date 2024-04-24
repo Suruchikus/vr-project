@@ -76,20 +76,7 @@ class OpenGLScene:
         self.scene_scale = self.calculate_scene_scale()
         self.angle = 0
         
-    def draw_rectangle(self):
-        vertices = [
-            [-0.5, -0.5, 0.0],  
-            [0.5, -0.5, 0.0],   
-            [0.5, 0.5, 0.0],    
-            [-0.5, 0.5, 0.0]    
-        ]
 
-        glBegin(GL_QUADS)
-        corner_translation = [-3.0, -2.0, 0.0]
-        translated_vertices = [[v[0] + corner_translation[0], v[1] + corner_translation[1], v[2] + corner_translation[2]] for v in vertices]
-        for vertex in translated_vertices:
-            glVertex3f(*vertex)
-        glEnd()
         
     def calculate_scene_box(self):
         scene_box = (self.scene.vertices[0], self.scene.vertices[0])
@@ -159,6 +146,7 @@ class OpenGLScene:
                 hand_position_prev_y = hand_position_curr_y
                 
 SCREEN_WIDTH, SCREEN_HEIGHT = 1200, 1200
+
 def main():
     scene = OpenGLScene()
     scene.main_loop()
